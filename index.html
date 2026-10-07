@@ -1,0 +1,397 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f4f2ee">
+  <meta name="description" content="Sera is a thoughtful local chat prototype for exploring ideas, planning, and creative prompts.">
+  <title>Sera — A quieter place to think</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --paper: #f4f2ee;
+      --panel: #fffefa;
+      --ink: #192322;
+      --muted: #7c8580;
+      --line: #e8e8e0;
+      --deep: #102220;
+      --deep-2: #17312e;
+      --teal: #8de0c8;
+      --teal-dark: #22584e;
+      --coral: #e9a994;
+      --shadow: 0 28px 80px rgba(35, 42, 38, .11);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100svh;
+      padding: 28px;
+      background:
+        radial-gradient(ellipse at 12% 12%, rgba(222, 223, 212, .5), transparent 32%),
+        radial-gradient(ellipse at 88% 82%, rgba(217, 228, 219, .55), transparent 34%),
+        var(--paper);
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    button, textarea { font: inherit; }
+    button { color: inherit; }
+    .frame {
+      width: min(1440px, 100%);
+      min-height: min(880px, calc(100svh - 56px));
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: minmax(300px, 37%) minmax(0, 1fr);
+      overflow: hidden;
+      background: var(--panel);
+      border: 1px solid rgba(255,255,255,.84);
+      border-radius: 28px;
+      box-shadow: var(--shadow);
+    }
+    .persona {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 700px;
+      isolation: isolate;
+      overflow: hidden;
+      background: #122321;
+      color: #f5f6f1;
+    }
+    .persona::before {
+      content: "";
+      position: absolute;
+      z-index: -2;
+      inset: 0;
+      background: url("assets/aura-portrait.webp") center 32% / cover no-repeat;
+      transform: scale(1.018);
+    }
+    .persona::after {
+      content: "";
+      position: absolute;
+      z-index: -1;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(9,21,20,.48) 0%, rgba(9,21,20,.04) 29%, rgba(9,21,20,.02) 47%, rgba(9,21,20,.72) 73%, #0c1a19 100%);
+    }
+    .persona-top, .persona-bottom { padding: 30px 32px; }
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 11px;
+      color: rgba(255,255,255,.96);
+      font-size: 12px;
+      font-weight: 720;
+      letter-spacing: .2em;
+    }
+    .brand-mark {
+      width: 29px; height: 29px; display: grid; place-items: center;
+      border: 1px solid rgba(255,255,255,.5); border-radius: 50%;
+      color: var(--teal); font-size: 15px; line-height: 1;
+    }
+    .persona-tag {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 8px 11px; border: 1px solid rgba(232,246,239,.25);
+      border-radius: 99px; background: rgba(11,25,23,.35);
+      color: rgba(255,255,255,.83); font-size: 11px; letter-spacing: .08em;
+      text-transform: uppercase; backdrop-filter: blur(10px);
+    }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--teal); box-shadow: 0 0 12px rgba(141,224,200,.8); }
+    .persona-copy { max-width: 390px; }
+    .eyebrow { color: var(--teal); font-size: 11px; font-weight: 700; letter-spacing: .19em; text-transform: uppercase; }
+    h1 { margin: 13px 0 8px; font-size: clamp(42px, 5.2vw, 68px); line-height: .98; letter-spacing: -.065em; font-weight: 560; }
+    .persona-copy p { max-width: 300px; margin: 0; color: rgba(244,248,243,.77); font-size: 15px; line-height: 1.65; }
+    .persona-foot { display:flex; align-items:center; justify-content:space-between; gap: 16px; margin-top: 28px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,.15); color: rgba(244,248,243,.58); font-size: 11px; letter-spacing: .03em; }
+    .persona-foot strong { color: rgba(244,248,243,.88); font-weight: 550; }
+    .content { min-width: 0; display: flex; flex-direction: column; }
+    .topbar {
+      min-height: 82px; padding: 0 38px; display: flex; align-items: center; justify-content: space-between; gap: 20px;
+      border-bottom: 1px solid var(--line);
+    }
+    .conversation-label { display:flex; align-items:center; gap: 12px; color: #74807a; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; }
+    .conversation-label svg { color: #94a09a; }
+    .top-actions { display:flex; align-items:center; gap: 13px; }
+    .demo-pill { display:inline-flex; align-items:center; gap:7px; padding: 7px 10px; border-radius: 99px; background: #edf6f0; color: #3e6a5e; font-size: 11px; font-weight: 650; white-space: nowrap; }
+    .demo-pill .dot { width: 6px; height: 6px; background: #55a987; box-shadow: none; }
+    .reset-button { display:inline-flex; align-items:center; gap: 8px; padding: 9px 12px; border: 1px solid var(--line); border-radius: 10px; background: transparent; color: #58635d; font-size: 12px; cursor: pointer; transition: background .2s, border .2s, transform .2s; }
+    .reset-button:hover { background: #f5f6f0; border-color: #d3dbd2; }
+    .reset-button:active { transform: scale(.98); }
+    .chat-area { min-height: 0; flex: 1; display: flex; flex-direction: column; padding: 0 38px; }
+    .intro { padding: 34px 0 24px; }
+    .intro-kicker { display:flex; align-items:center; gap: 8px; color: #9a7e6a; font-size: 11px; font-weight: 650; letter-spacing: .14em; text-transform: uppercase; }
+    .intro h2 { margin: 10px 0 7px; font-size: clamp(26px, 3vw, 36px); line-height: 1.12; letter-spacing: -.045em; font-weight: 570; }
+    .intro p { margin: 0; color: #7f8983; font-size: 14px; line-height: 1.6; }
+    .messages { display:flex; flex-direction:column; gap: 18px; padding: 4px 0 22px; overflow-y:auto; scrollbar-width: thin; scrollbar-color: #d9dfd9 transparent; }
+    .message { display:flex; align-items:flex-start; gap: 11px; max-width: 86%; animation: rise .24s ease-out both; }
+    .message.user { align-self:flex-end; flex-direction:row-reverse; }
+    .avatar-mini { flex:0 0 29px; width:29px; height:29px; display:grid; place-items:center; border-radius: 10px; color: #22594f; background: #e3f2ec; font-size: 11px; font-weight: 700; }
+    .user .avatar-mini { color:#6a5a4d; background:#f3e9e1; }
+    .bubble-wrap { min-width:0; }
+    .speaker { margin: 1px 0 6px; color: #929c96; font-size: 10px; font-weight: 650; letter-spacing: .09em; text-transform: uppercase; }
+    .user .speaker { text-align:right; }
+    .bubble { padding: 12px 15px; border: 1px solid #ebeee8; border-radius: 5px 15px 15px 15px; background:#f7f8f4; color:#38433e; font-size: 13px; line-height:1.65; white-space:pre-wrap; overflow-wrap:anywhere; }
+    .user .bubble { border-color:#dceee7; border-radius:15px 5px 15px 15px; background:#eaf5ef; }
+    .bubble strong { color:#273631; font-weight:700; }
+    .message-time { margin-top: 5px; color:#a4aaa5; font-size:10px; }
+    .user .message-time { text-align:right; }
+    .typing .bubble { display:flex; align-items:center; gap:4px; padding:14px 16px; }
+    .typing-dot { width:5px; height:5px; border-radius:50%; background:#88a79a; animation:pulse 1s ease-in-out infinite; }
+    .typing-dot:nth-child(2) { animation-delay:.14s; }
+    .typing-dot:nth-child(3) { animation-delay:.28s; }
+    .suggestions { display:flex; flex-wrap:wrap; gap: 8px; margin: 5px 0 19px 40px; }
+    .suggestion { padding:9px 12px; border:1px solid #e5e9e2; border-radius:99px; background:#fff; color:#61716a; font-size:11px; cursor:pointer; transition:all .18s ease; }
+    .suggestion:hover { border-color:#a8c5b6; color:#315c4f; background:#f3f9f5; transform:translateY(-1px); }
+    .composer-wrap { margin-top:auto; padding: 14px 0 23px; border-top:1px solid var(--line); }
+    .composer { display:flex; align-items:flex-end; gap:10px; padding: 10px 11px 10px 16px; border:1px solid #e3e7e0; border-radius: 15px; background:#fff; box-shadow:0 5px 20px rgba(41,54,44,.035); transition:border .2s, box-shadow .2s; }
+    .composer:focus-within { border-color:#aacbb9; box-shadow:0 0 0 3px rgba(141,224,200,.16); }
+    textarea { display:block; flex:1; min-height:28px; max-height:126px; resize:none; padding: 4px 0 2px; border:0; outline:0; background:transparent; color:var(--ink); font-size:13px; line-height:1.55; }
+    textarea::placeholder { color:#a0a8a3; }
+    .send-button { flex:0 0 37px; width:37px; height:37px; display:grid; place-items:center; border:0; border-radius:11px; background:var(--deep); color:#f8fffb; cursor:pointer; transition:background .2s, transform .2s, opacity .2s; }
+    .send-button:hover { background:#24574e; transform:translateY(-1px); }
+    .send-button:disabled { opacity:.38; cursor:not-allowed; transform:none; }
+    .composer-meta { display:flex; justify-content:space-between; gap:10px; padding:9px 3px 0; color:#9aa39d; font-size:10px; }
+    .local-note { display:flex; align-items:center; gap:6px; }
+    .local-note svg { color:#83988c; }
+    .toast { position:fixed; right:24px; bottom:24px; z-index:5; padding:11px 14px; border-radius:11px; background:#1a302c; color:#f1faf4; font-size:12px; box-shadow:0 10px 30px rgba(0,0,0,.14); opacity:0; transform:translateY(8px); pointer-events:none; transition:opacity .22s, transform .22s; }
+    .toast.show { opacity:1; transform:translateY(0); }
+    @keyframes rise { from { opacity:0; transform:translateY(5px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes pulse { 0%, 60%, 100% { opacity:.34; transform:translateY(0); } 30% { opacity:1; transform:translateY(-2px); } }
+    @media (min-width: 1180px) {
+      .frame { height:min(880px, calc(100svh - 56px)); }
+    }
+    @media (max-width: 900px) {
+      body { padding:16px; }
+      .frame { min-height:calc(100svh - 32px); grid-template-columns:minmax(250px, 34%) minmax(0,1fr); border-radius:22px; }
+      .persona { min-height:660px; }
+      .persona-top,.persona-bottom { padding:25px 23px; }
+      .topbar { padding:0 25px; }
+      .chat-area { padding:0 25px; }
+      .message { max-width:96%; }
+    }
+    @media (max-width: 680px) {
+      body { min-height:100svh; padding:0; background:var(--panel); }
+      .frame { width:100%; min-height:100svh; display:flex; flex-direction:column; border:0; border-radius:0; box-shadow:none; }
+      .persona { min-height:0; height:270px; flex:0 0 270px; }
+      .persona::before { background-position:center 34%; }
+      .persona::after { background:linear-gradient(180deg,rgba(9,21,20,.45),rgba(9,21,20,.02) 35%,rgba(9,21,20,.25) 62%,#0c1a19 100%); }
+      .persona-top { padding:19px 20px; }
+      .persona-bottom { padding:10px 20px 18px; }
+      .brand-mark { width:26px;height:26px; }
+      .persona-tag { font-size:9px; padding:7px 9px; }
+      h1 { margin:8px 0 4px; font-size:39px; }
+      .eyebrow { font-size:9px; }
+      .persona-copy p { max-width:290px; font-size:12px; line-height:1.45; }
+      .persona-foot { margin-top:13px; padding-top:10px; font-size:9px; }
+      .topbar { min-height:62px; padding:0 18px; }
+      .conversation-label { font-size:10px; }
+      .demo-pill { padding:6px 8px; font-size:10px; }
+      .reset-button { padding:8px 9px; font-size:11px; }
+      .reset-button span { display:none; }
+      .chat-area { flex:1; min-height:450px; padding:0 18px; }
+      .intro { padding:23px 0 16px; }
+      .intro h2 { font-size:27px; }
+      .intro p { font-size:12px; }
+      .messages { gap:14px; }
+      .message { max-width:100%; }
+      .bubble { font-size:12px; padding:11px 13px; }
+      .suggestions { margin-left:0; margin-bottom:12px; }
+      .composer-wrap { padding:11px 0 16px; }
+      .composer-meta { font-size:9px; }
+      .toast { right:14px; bottom:14px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *,*::before,*::after { scroll-behavior:auto !important; animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="frame" aria-label="Sera conversation prototype">
+    <aside class="persona" aria-label="Sera persona profile">
+      <div class="persona-top">
+        <div class="brand"><span class="brand-mark" aria-hidden="true">s</span><span>SERA / STUDIO</span></div>
+      </div>
+      <div class="persona-bottom">
+        <div class="persona-tag"><span class="dot" aria-hidden="true"></span><span>Persona visual · concept</span></div>
+        <div class="persona-copy">
+          <div class="eyebrow">A quieter place to think</div>
+          <h1>Sera</h1>
+          <p>Bring a question, a half-formed idea, or a plan that needs room to breathe.</p>
+        </div>
+        <div class="persona-foot"><span><strong>Conversation studio</strong></span><span>Local prototype</span></div>
+      </div>
+    </aside>
+
+    <section class="content" aria-label="Chat">
+      <header class="topbar">
+        <div class="conversation-label">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 6.5h14M5 12h9M5 17.5h6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="18" cy="17" r="3" stroke="currentColor" stroke-width="1.5"/></svg>
+          <span>Conversation</span>
+        </div>
+        <div class="top-actions">
+          <div class="demo-pill"><span class="dot" aria-hidden="true"></span>Local demo</div>
+          <button class="reset-button" id="resetButton" type="button" aria-label="Reset conversation" title="Reset conversation">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4.8 10a7.3 7.3 0 1 1-.1 4.2M4.8 10V5.8M4.8 10H9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg><span>New conversation</span>
+          </button>
+        </div>
+      </header>
+
+      <div class="chat-area">
+        <div class="intro">
+          <div class="intro-kicker"><span aria-hidden="true">✳</span> Start wherever you are</div>
+          <h2>What’s on your mind?</h2>
+          <p>Try one of these, or type your own question below.</p>
+        </div>
+        <div class="messages" id="messages" role="log" aria-live="polite" aria-relevant="additions text"></div>
+        <div class="suggestions" id="suggestions" aria-label="Suggested prompts">
+          <button class="suggestion" type="button" data-prompt="Help me make a simple plan for a busy week.">Plan a busy week</button>
+          <button class="suggestion" type="button" data-prompt="I have a decision to make. Can you help me think it through?">Untangle a decision</button>
+          <button class="suggestion" type="button" data-prompt="Give me a fresh creative prompt to get started.">Find a creative spark</button>
+        </div>
+        <div class="composer-wrap">
+          <form class="composer" id="chatForm">
+            <textarea id="chatInput" rows="1" maxlength="1200" placeholder="Write a message…" aria-label="Write a message" autocomplete="off"></textarea>
+            <button class="send-button" id="sendButton" type="submit" aria-label="Send message" disabled>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12 19 5l-4.2 14-3.1-5-6.7-2Z" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"/><path d="m11.7 14 3.8-4" stroke="currentColor" stroke-width="1.65" stroke-linecap="round"/></svg>
+            </button>
+          </form>
+          <div class="composer-meta">
+            <span class="local-note"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M8 10V7a4 4 0 0 1 8 0v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Replies are local demo examples</span>
+            <span>Enter to send · Shift + Enter for a new line</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    (() => {
+      const messagesEl = document.getElementById('messages');
+      const input = document.getElementById('chatInput');
+      const sendButton = document.getElementById('sendButton');
+      const form = document.getElementById('chatForm');
+      const resetButton = document.getElementById('resetButton');
+      const suggestions = document.getElementById('suggestions');
+      const toast = document.getElementById('toast');
+      let replyTimer;
+      let toastTimer;
+      let turn = 0;
+      const welcome = 'Hi, I’m Sera. This is a local conversation demo, so my replies are examples—not output from a connected AI model. Tell me what you’re working through, and I’ll offer a useful starting point.';
+
+      function timeLabel() {
+        return new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' }).format(new Date());
+      }
+      function appendMessage(kind, text) {
+        const article = document.createElement('article');
+        article.className = `message ${kind}`;
+        const avatar = document.createElement('div');
+        avatar.className = 'avatar-mini';
+        avatar.setAttribute('aria-hidden', 'true');
+        avatar.textContent = kind === 'assistant' ? 'S' : 'Y';
+        const wrap = document.createElement('div');
+        wrap.className = 'bubble-wrap';
+        const name = document.createElement('div');
+        name.className = 'speaker';
+        name.textContent = kind === 'assistant' ? 'Sera · demo' : 'You';
+        const bubble = document.createElement('div');
+        bubble.className = 'bubble';
+        bubble.textContent = text;
+        const time = document.createElement('div');
+        time.className = 'message-time';
+        time.textContent = timeLabel();
+        wrap.append(name, bubble, time);
+        article.append(avatar, wrap);
+        messagesEl.append(article);
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+      }
+      function showTyping() {
+        const article = document.createElement('article');
+        article.className = 'message assistant typing';
+        article.id = 'typingIndicator';
+        article.setAttribute('aria-label', 'Sera is preparing a demo reply');
+        article.innerHTML = '<div class="avatar-mini" aria-hidden="true">S</div><div class="bubble-wrap"><div class="speaker">Sera · demo</div><div class="bubble"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></div></div>';
+        messagesEl.append(article);
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+      }
+      function scriptedReply(text) {
+        const q = text.toLowerCase();
+        if (/\b(week|schedule|busy|priorit|plan|organize|organise|routine|deadline)\b/.test(q)) {
+          return 'Let’s make it lighter, not more complicated. Try this quick reset:\n\n1. Write down every commitment and open task.\n2. Circle the three outcomes that matter most this week.\n3. Give each one a protected 45-minute block.\n4. Leave one buffer block for the unexpected.\n\nIf you share your main commitments, I can help turn them into a sample week. (Demo suggestion.)';
+        }
+        if (/\b(decid|choice|choose|option|trade.?off|should i|stuck|uncertain)\b/.test(q)) {
+          return 'A useful way to untangle a decision is to separate what you know from what you fear.\n\n• What are the two or three real options?\n• Which choice best fits your priorities six months from now?\n• What is the smallest reversible test you could try first?\n\nYou do not need perfect certainty—just enough clarity for the next step. Want to share the options?';
+        }
+        if (/\b(creative|idea|inspir|prompt|write|story|brainstorm|design)\b/.test(q)) {
+          return 'Here’s a small creative warm-up: imagine a familiar place that keeps one secret from everyone who visits. Describe the first ordinary detail that gives it away—then write for five minutes without explaining the secret.\n\nIf you tell me the medium or mood you want, I can offer a more tailored prompt. (Demo suggestion.)';
+        }
+        if (/\b(email|message|draft|rewrite|wording|write to|reply)\b/.test(q)) {
+          return 'A clear note usually needs only three things: the context, the request, and the next step.\n\nTry this structure:\n“Hi [name] — I’m reaching out about [context]. Could we [specific request] by [time]? If that timing is difficult, [flexible alternative]. Thanks, [your name].”\n\nShare a draft and the tone you want, and I can suggest an edit. (Demo suggestion.)';
+        }
+        if (/\b(explain|learn|understand|what is|how does|teach me)\b/.test(q)) {
+          return 'A good explanation starts with the core idea, then connects it to a concrete example. Tell me the topic and your starting point, and I can sketch a simple explanation format:\n\n1. The one-sentence idea\n2. A familiar analogy\n3. One example\n4. What the analogy misses\n\nThis prototype uses preset examples rather than a knowledge model.';
+        }
+        if (/\b(hello|hi|hey|good morning|good evening)\b/.test(q)) {
+          return 'Hello. Pick a thread—something you’re planning, deciding, making, or simply curious about—and we can find a first step. This is still a local demo, so the reply patterns are limited.';
+        }
+        const openers = [
+          'A helpful first move is to make the question smaller. What part feels most important to sort out first?',
+          'Let’s start with the next concrete step rather than the whole picture. What would “a little clearer” look like here?',
+          'I can offer a starting framework: name the goal, note what is getting in the way, then choose one low-effort next action. Which part should we focus on?',
+          'There may be a few useful directions here. If you add one detail about the outcome you want, I can point you toward a more specific next step.'
+        ];
+        return openers[turn++ % openers.length] + '\n\nThis is a scripted local demo, not a model-generated answer.';
+      }
+      function submitMessage(text) {
+        const value = (text || input.value).trim();
+        if (!value) return;
+        clearTimeout(replyTimer);
+        document.getElementById('typingIndicator')?.remove();
+        suggestions.hidden = true;
+        appendMessage('user', value);
+        input.value = '';
+        input.style.height = 'auto';
+        sendButton.disabled = true;
+        showTyping();
+        replyTimer = setTimeout(() => {
+          document.getElementById('typingIndicator')?.remove();
+          appendMessage('assistant', scriptedReply(value));
+          sendButton.disabled = !input.value.trim();
+          input.focus();
+        }, 650);
+      }
+      function showToast(message) {
+        toast.textContent = message;
+        toast.classList.add('show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => toast.classList.remove('show'), 2200);
+      }
+      function resetChat() {
+        clearTimeout(replyTimer);
+        messagesEl.replaceChildren();
+        turn = 0;
+        appendMessage('assistant', welcome);
+        suggestions.hidden = false;
+        input.value = '';
+        input.style.height = 'auto';
+        sendButton.disabled = true;
+        showToast('Conversation reset');
+      }
+      form.addEventListener('submit', (event) => { event.preventDefault(); submitMessage(); });
+      input.addEventListener('input', () => {
+        input.style.height = 'auto';
+        input.style.height = `${Math.min(input.scrollHeight, 126)}px`;
+        sendButton.disabled = !input.value.trim();
+      });
+      input.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); submitMessage(); }
+      });
+      suggestions.addEventListener('click', (event) => {
+        const button = event.target.closest('[data-prompt]');
+        if (button) submitMessage(button.dataset.prompt);
+      });
+      resetButton.addEventListener('click', resetChat);
+      resetChat();
+    })();
+  </script>
+</body>
+</html>
